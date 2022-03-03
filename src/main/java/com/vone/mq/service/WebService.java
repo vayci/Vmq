@@ -160,9 +160,9 @@ public class WebService {
         if (cz<0){
             cz = cz*-1;
         }
-        if (cz>50*1000){
-            return ResUtil.error("客户端时间错误");
-        }
+//        if (cz>50*1000){
+//            return ResUtil.error("客户端时间错误");
+//        }
 
         Setting setting = new Setting();
         setting.setVkey("lastheart");
@@ -182,9 +182,6 @@ public class WebService {
 
         if (cz<0){
             cz = cz*-1;
-        }
-        if (cz>50*1000){
-            return ResUtil.error("客户端时间错误");
         }
         String jssign = md5(type+""+price+t+key);
         if (!jssign.equals(sign)){

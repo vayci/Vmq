@@ -11,6 +11,8 @@ import com.vone.mq.dto.CommonRes;
 import com.vone.mq.dto.CreateOrderRes;
 import com.vone.mq.service.WebService;
 import com.vone.mq.utils.ResUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,6 +31,8 @@ import java.util.Map;
 
 @RestController
 public class WebController {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(WebController.class);
 
     @Autowired
     private WebService webService;
@@ -118,6 +122,7 @@ public class WebController {
      */
     @RequestMapping("/createOrder")
     public String createOrder(String payId, String param, Integer type, String price, String notifyUrl, String returnUrl, String sign, Integer isHtml) {
+        LOGGER.info("订单创建： {} {} {} {} {} {} {} {}", payId, param, type, price, notifyUrl, returnUrl, sign, isHtml);
         if (payId == null || payId.equals("")) {
             return new Gson().toJson(ResUtil.error("请传入商户订单号"));
         }
@@ -169,6 +174,7 @@ public class WebController {
 
     @RequestMapping("/closeOrder")
     public CommonRes closeOrder(String orderId, String sign) {
+        LOGGER.info("订单关闭： {} sign：{}", orderId, sign);
         if (orderId == null) {
             return ResUtil.error("请传入云端订单号");
         }
@@ -180,16 +186,19 @@ public class WebController {
 
     @RequestMapping("/appHeart")
     public CommonRes appHeart(String t, String sign) {
+        LOGGER.info("监控心跳： {} sign：{}", t, sign);
         return webService.appHeart(t, sign);
     }
 
     @RequestMapping("/appPush")
     public CommonRes appPush(Integer type, String price, String t, String sign) {
+        LOGGER.info("监控推送： {} {} {} , sign：{}",type, price, t, sign);
         return webService.appPush(type, price, t, sign);
     }
 
     @RequestMapping("/getOrder")
     public CommonRes getOrder(String orderId) {
+        LOGGER.info("订单查询： {}", orderId);
         if (orderId == null) {
             return ResUtil.error("请传入订单编号");
         }
@@ -198,6 +207,7 @@ public class WebController {
 
     @RequestMapping("/checkOrder")
     public CommonRes checkOrder(String orderId) {
+        LOGGER.info("订单校验： {}", orderId);
         if (orderId == null) {
             return ResUtil.error("请传入订单编号");
         }
@@ -207,6 +217,7 @@ public class WebController {
 
     @RequestMapping("/getState")
     public CommonRes getState(String t, String sign) {
+        LOGGER.info("状态获取： {} {}", t, sign);
         if (t == null) {
             return ResUtil.error("请传入t");
         }

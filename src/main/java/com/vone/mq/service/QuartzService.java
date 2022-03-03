@@ -26,7 +26,7 @@ public class QuartzService {
     public void timerToZZP(){
 
         try {
-            System.out.println("开始清理过期订单...");
+            //System.out.println("开始清理过期订单...");
             String timeout = settingDao.findById("close").get().getVvalue();
             String closeTime = String.valueOf(new Date().getTime());
             timeout = String.valueOf(new Date().getTime() - Integer.valueOf(timeout)*60*1000);
@@ -37,7 +37,9 @@ public class QuartzService {
             for (PayOrder payOrder: payOrders) {
                 tmpPriceDao.delprice(payOrder.getType()+"-"+payOrder.getReallyPrice());
             }
-            System.out.println(row+"成功清理" + row + "个订单");
+            if(row>0){
+                System.out.println(row+"成功清理" + row + "个订单");
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
