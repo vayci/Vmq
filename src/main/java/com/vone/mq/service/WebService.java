@@ -1,5 +1,6 @@
 package com.vone.mq.service;
 
+import com.vone.mq.controller.WebController;
 import com.vone.mq.dao.PayOrderDao;
 import com.vone.mq.dao.PayQrcodeDao;
 import com.vone.mq.dao.SettingDao;
@@ -12,6 +13,8 @@ import com.vone.mq.entity.Setting;
 import com.vone.mq.utils.Arith;
 import com.vone.mq.utils.HttpRequest;
 import com.vone.mq.utils.ResUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -23,6 +26,9 @@ import java.util.Map;
 
 @Service
 public class WebService {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(WebService.class);
+
     @Autowired
     private SettingDao settingDao;
     @Autowired
@@ -202,20 +208,42 @@ public class WebService {
         if (payOrder==null){
 
             payOrder = new PayOrder();
-            payOrder.setPayId("无订单转账");
-            payOrder.setOrderId("无订单转账");
+            payOrder.setPayId(String.valueOf(System.currentTimeMillis()));
+            payOrder.setOrderId("transfer");
             payOrder.setCreateDate(new Date().getTime());
             payOrder.setPayDate(new Date().getTime());
             payOrder.setCloseDate(new Date().getTime());
-            payOrder.setParam("无订单转账");
+            payOrder.setParam("transfer");
             payOrder.setType(type);
             payOrder.setPrice(Double.valueOf(price));
             payOrder.setReallyPrice(Double.valueOf(price));
             payOrder.setState(1);
-            payOrder.setPayUrl("无订单转账");
+            payOrder.setPayUrl("transfer");
             payOrderDao.save(payOrder);
-            return ResUtil.success();
 
+            //执行通知
+            String p = "payId="+payOrder.getPayId()+"&param="+payOrder.getParam()+"&type="+payOrder.getType()+"&price="+payOrder.getPrice()+"&reallyPrice="+payOrder.getReallyPrice();
+            sign = md5(payOrder.getPayId()+payOrder.getParam()+payOrder.getType()+payOrder.getPrice()+payOrder.getReallyPrice()+key);
+            p = p+"&sign="+sign;
+            String url = payOrder.getNotifyUrl();
+            if (url==null || url.equals("")){
+                url = settingDao.findById("notifyUrl").get().getVvalue();
+                if (url==null || url.equals("")){
+                    payOrderDao.setState(2,payOrder.getId());
+                    return ResUtil.error("您还未配置异步通知地址，请现在系统配置中配置");
+                }
+            }
+
+            String res = HttpRequest.sendGet(url,p);
+            LOGGER.info("回调订单：{} {} => {}", url, p, res);
+            if (res!=null && res.equals("success")){
+                return ResUtil.success();
+            }else {
+                //通知失败，设置状态为2
+                payOrderDao.setState(2,payOrder.getId());
+                return ResUtil.error("通知异步地址失败");
+
+            }
         }else{
             tmpPriceDao.delprice(type+"-"+price);
 
@@ -238,7 +266,7 @@ public class WebService {
             }
 
             String res = HttpRequest.sendGet(url,p);
-
+            LOGGER.info("回调订单：{} {} => {}", url, p, res);
             if (res!=null && res.equals("success")){
                 return ResUtil.success();
             }else {
